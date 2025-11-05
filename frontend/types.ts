@@ -92,3 +92,27 @@ export interface WorkOrder {
   approvalName?: string;
   approvalDate?: string; // YYYY-MM-DD
 }
+
+export interface LogbookEntry {
+  id: number;
+  apartmentId: number;
+  note: string;
+  date: string; // ISO String for timestamp
+  createdBy: number; // userId
+}
+
+export interface PostItComment {
+  id: number;
+  content: string;
+  createdBy: number; // userId
+  createdAt: string; // ISO String
+}
+
+export interface PostIt {
+  id: number;
+  content: string;
+  createdBy: number; // userId
+  createdAt: string; // ISO String
+  targetUserIds: number[]; // empty means all receptionists
+  comments: PostItComment[];
+}
