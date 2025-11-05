@@ -165,7 +165,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
   
   const deleteRole = async (roleId: number) => {
-    if (data?.users.some(u => u.roleIds.includes(roleId))) {
+    if (data?.users.some((u: User) => u.roleIds.includes(roleId))) {
       alert('No se puede eliminar el rol porque está asignado a uno o más usuarios.');
       return false;
     }
@@ -174,7 +174,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const deleteApartment = async (apartmentId: number) => {
-    if (data?.assignments.some(a => a.apartmentId === apartmentId) || data?.checkIns.some(c => c.apartmentId === apartmentId)) {
+    if (data?.assignments.some((a: Assignment) => a.apartmentId === apartmentId) || data?.checkIns.some((c: CheckIn) => c.apartmentId === apartmentId)) {
         alert('No se puede eliminar el apartamento porque tiene asignaciones o check-ins históricos.');
         return;
     }
@@ -186,7 +186,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
   
   const updateAssignment = async (id: number, updates: Partial<Assignment>) => {
-    const assignment = data?.assignments.find(a => a.id === id);
+    const assignment = data?.assignments.find((a: Assignment) => a.id === id);
     if (assignment) {
         await assignmentsHandler.update({ ...assignment, ...updates });
     }
@@ -197,7 +197,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
   
   const updateWorkOrder = async (id: number, updates: Partial<WorkOrder>) => {
-      const workOrder = data?.workOrders.find(wo => wo.id === id);
+      const workOrder = data?.workOrders.find((wo: WorkOrder) => wo.id === id);
       if(workOrder) {
           await workOrdersHandler.update({ ...workOrder, ...updates });
       }
