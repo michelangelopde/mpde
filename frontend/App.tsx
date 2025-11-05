@@ -5,7 +5,7 @@ import { ManagerDashboard } from './components/dashboards/ManagerDashboard';
 import { EmployeeDashboard } from './components/dashboards/EmployeeDashboard';
 import { ReceptionDashboard } from './components/dashboards/ReceptionDashboard';
 import { MaintenanceDashboard } from './components/dashboards/MaintenanceDashboard';
-import { HomeIcon, UserGroupIcon, QuestionMarkCircleIcon } from './components/icons';
+import { UserGroupIcon, QuestionMarkCircleIcon } from './components/icons';
 import { Button } from './components/common/Button';
 import { Card } from './components/common/Card';
 import { UserManual } from './components/dashboards/UserManual';
@@ -19,15 +19,38 @@ const App: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  const { currentUser, activeRole, logout, buildingName } = useAppData();
+  const { currentUser, activeRole, logout, buildingName, isLoading, error } = useAppData();
   const [isManualOpen, setManualOpen] = useState(false);
 
   useEffect(() => {
-    document.title = `Sistema de Gestión - ${buildingName}`;
+    if (buildingName) {
+      document.title = `Sistema de Gestión - ${buildingName}`;
+    }
   }, [buildingName]);
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen bg-stone-100">
+        <div className="logo-font text-8xl text-amber-600 animate-pulse">M</div>
+        <p className="mt-4 text-stone-600 font-semibold">Cargando Sistema de Gestión...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+        <div className="flex justify-center items-center h-screen bg-red-50 text-red-700">
+            <div className="text-center p-8">
+                <h2 className="text-2xl font-bold mb-4">Error de Conexión</h2>
+                <p>No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.</p>
+                <p className="text-sm mt-2 font-mono bg-red-100 p-2 rounded">{error}</p>
+            </div>
+        </div>
+    );
+  }
+
   const renderDashboard = () => {
-    if (!activeRole) return <p>Seleccione un rol para continuar.</p>;
+    if (!activeRole) return <RoleSelection />;
 
     switch (activeRole.name) {
       case 'Supervisor':
@@ -41,7 +64,12 @@ const AppContent: React.FC = () => {
       case 'Mantenimiento':
         return <MaintenanceDashboard />;
       default:
-        return <p>Rol desconocido o sin panel asignado.</p>;
+        return (
+            <div className="text-center py-16">
+                <h2 className="text-xl font-bold">Rol Desconocido</h2>
+                <p className="text-stone-500">El rol '{activeRole.name}' no tiene un panel asignado.</p>
+            </div>
+        );
     }
   };
 
@@ -49,42 +77,44 @@ const AppContent: React.FC = () => {
     if (!currentUser) {
       return <Login />;
     }
-    if (!activeRole) {
-      return <RoleSelection />;
-    }
     return renderDashboard();
   };
 
+  const rootDivClass = !currentUser ? 'login-background' : 'bg-stone-100';
+
   return (
-    <div className="flex flex-col min-h-screen bg-slate-100 text-slate-800">
-      <header className="bg-white shadow-md">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="logo-font text-4xl text-indigo-600">M</div>
-            <h1 className="text-xl font-bold text-slate-800">Sistema de Gestión - {buildingName}</h1>
-          </div>
-          {currentUser && (
-            <div className="flex items-center gap-4">
-              <span className="hidden sm:block font-semibold text-slate-700">Hola, {currentUser.name}</span>
+    <div className={`flex flex-col min-h-screen text-stone-800 ${rootDivClass}`}>
+      {currentUser && (
+        <header className="bg-white shadow-md">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="logo-font text-4xl text-amber-600">M</div>
+              <h1 className="text-xl font-bold text-stone-800 hidden sm:block">Sistema de Gestión - {buildingName}</h1>
+              <h1 className="text-lg font-bold text-stone-800 sm:hidden">{buildingName}</h1>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <span className="hidden sm:block font-semibold text-stone-700">Hola, {currentUser.name}</span>
               {activeRole && (
-                <span className="hidden sm:block px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-semibold rounded-full">
+                <span className="hidden md:block px-3 py-1 bg-amber-100 text-amber-800 text-sm font-semibold rounded-full">
                   {activeRole.name}
                 </span>
               )}
                <Button variant="secondary" size="sm" onClick={() => setManualOpen(true)} className="!p-2" aria-label="Abrir manual de usuario">
                   <QuestionMarkCircleIcon className="w-5 h-5" />
                </Button>
-              <Button variant="secondary" onClick={logout}>Cerrar Sesión</Button>
+              <Button variant="secondary" size="sm" onClick={logout}>Salir</Button>
             </div>
-          )}
-        </div>
-      </header>
-      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          </div>
+        </header>
+      )}
+      <main className={`flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 ${!currentUser ? 'flex flex-col justify-center' : ''}`}>
         {renderContent()}
       </main>
-      <footer className="text-center py-4 text-sm text-slate-500 bg-white border-t border-slate-200">
-        &copy; {new Date().getFullYear()} Germán Rodríguez Barcos
-      </footer>
+      {currentUser && (
+        <footer className="text-center py-4 text-sm text-stone-500 bg-white border-t border-stone-200">
+          &copy; {new Date().getFullYear()} Germán Rodríguez Barcos
+        </footer>
+      )}
       {isManualOpen && <UserManual onClose={() => setManualOpen(false)} />}
     </div>
   );
@@ -95,37 +125,40 @@ const Login: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        const success = login(username, password);
+        setIsSubmitting(true);
+        const success = await login(username, password);
         if (!success) {
             setError('Usuario o clave incorrectos.');
         }
+        setIsSubmitting(false);
     };
     
-    const inputStyles = "appearance-none block w-full px-3 py-2 border border-sky-300 rounded-md shadow-sm placeholder-slate-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-sky-100 text-black";
+    const inputStyles = "appearance-none block w-full px-3 py-2 border border-amber-300 rounded-md shadow-sm placeholder-stone-500 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm bg-amber-50 text-black";
 
     return (
-        <div className="flex justify-center items-center py-16">
+        <div className="flex justify-center items-center">
             <div className="w-full max-w-md">
                  <Card>
                     <div className="flex justify-center items-center mb-4">
-                        <div className="logo-font text-8xl text-blue-600">
+                        <div className="logo-font text-8xl text-amber-600">
                             M
                         </div>
                     </div>
                     <div className="mb-6 text-center">
-                        <h2 className="text-3xl font-bold text-slate-800">{buildingName}</h2>
-                        <h3 className="mt-2 text-xl text-slate-700">Bienvenido</h3>
-                        <p className="mt-4 text-slate-600">
+                        <h2 className="text-3xl font-bold text-stone-800">{buildingName}</h2>
+                        <h3 className="mt-2 text-xl text-stone-700">Bienvenido</h3>
+                        <p className="mt-4 text-stone-600">
                             Por favor, ingrese sus datos para acceder al sistema.
                         </p>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label htmlFor="username" className="block text-sm font-medium text-slate-700">
+                            <label htmlFor="username" className="block text-sm font-medium text-stone-700">
                                 Usuario
                             </label>
                             <div className="mt-1">
@@ -143,7 +176,7 @@ const Login: React.FC = () => {
                         </div>
 
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                            <label htmlFor="password" className="block text-sm font-medium text-stone-700">
                                 Clave
                             </label>
                             <div className="mt-1">
@@ -167,8 +200,8 @@ const Login: React.FC = () => {
                         )}
 
                         <div>
-                            <Button type="submit" className="w-full">
-                                Entrar
+                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                {isSubmitting ? "Entrando..." : "Entrar"}
                             </Button>
                         </div>
                     </form>
@@ -182,17 +215,17 @@ const RoleSelection: React.FC = () => {
     const { currentUser, roles, setActiveRole } = useAppData();
 
     const availableRoles = useMemo(() => {
-        if (!currentUser) return [];
+        if (!currentUser || !roles) return [];
         return roles.filter(r => currentUser.roleIds.includes(r.id));
     }, [currentUser, roles]);
 
     return (
-        <div className="flex justify-center items-center py-16">
+        <div className="flex justify-center items-center">
             <div className="w-full max-w-md">
                 <Card title="Seleccionar Perfil">
                      <div className="mb-6 text-center">
-                        <h2 className="text-2xl font-bold text-slate-800">Hola, {currentUser?.name}</h2>
-                        <p className="mt-2 text-slate-600">
+                        <h2 className="text-2xl font-bold text-stone-800">Hola, {currentUser?.name}</h2>
+                        <p className="mt-2 text-stone-600">
                             Tienes varios perfiles asignados. Por favor, selecciona con cuál deseas trabajar hoy.
                         </p>
                     </div>
