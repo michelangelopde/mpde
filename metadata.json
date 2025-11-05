@@ -1,0 +1,5 @@
+{
+  "name": "grb",
+  "description": "Una aplicación para optimizar y simplificar la administración de las tareas de limpieza y gestión en edificios. Permite asignar trabajos, monitorear el progreso y generar reportes detallados.",
+  "requestFramePermissions": []
+}
