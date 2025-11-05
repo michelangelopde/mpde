@@ -1,65 +1,7 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { Role, User, Apartment, TaskType, Assignment, AssignmentStatus, CheckIn, ApartmentSize, WorkOrder, WorkOrderStatus } from '../types';
-import { getTodayDateString } from '../lib/utils';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo, useEffect } from 'react';
+import { Role, User, Apartment, TaskType, Assignment, AssignmentStatus, CheckIn, WorkOrder, LogbookEntry, PostIt, PostItComment, WorkOrderStatus } from '../types';
 
-// MOCK DATA
-const initialRoles: Role[] = [
-  { id: 1, name: 'Supervisor' },
-  { id: 2, name: 'Encargado' },
-  { id: 3, name: 'Mucama' },
-  { id: 4, name: 'Recepción' },
-  { id: 5, name: 'Mantenimiento' },
-];
-
-const initialUsers: User[] = [
-  { id: 1, employeeId: '001', name: 'Admin Supervisor', roleIds: [1], username: 'super', password: 'super' },
-  { id: 2, employeeId: '102', name: 'Juan Pérez', roleIds: [2], username: 'jperez', password: 'password123' },
-  { id: 3, employeeId: '203', name: 'Ana Gómez', roleIds: [3, 4], username: 'agomez', password: 'password123', dailyMinutes: 480 },
-  { id: 4, employeeId: '204', name: 'Luisa Martinez', roleIds: [3], username: 'lmartinez', password: 'password123', dailyMinutes: 360 },
-  { id: 5, employeeId: '305', name: 'Carlos Rodriguez', roleIds: [4], username: 'crodriguez', password: 'password123' },
-  { id: 6, employeeId: '206', name: 'Sofía López', roleIds: [3], username: 'slopez', password: 'password123', dailyMinutes: 480 },
-  { id: 7, employeeId: '407', name: 'Mario Bross', roleIds: [5], username: 'mario', password: 'password123' },
-];
-
-const initialApartments: Apartment[] = [
-  { id: 101, name: '0101', size: ApartmentSize.CHICO, squareMeters: 50, bedrooms: 1, bathrooms: 1, cleaningTimeMinutes: 60, servicesSuspended: false },
-  { id: 102, name: '0102', size: ApartmentSize.GRANDE, squareMeters: 90, bedrooms: 3, bathrooms: 2, cleaningTimeMinutes: 120, servicesSuspended: false },
-  { id: 201, name: '0201', size: ApartmentSize.MEDIANO, squareMeters: 65, bedrooms: 2, bathrooms: 1, cleaningTimeMinutes: 75, servicesSuspended: true },
-  { id: 202, name: '0202', size: ApartmentSize.CHICO, squareMeters: 55, bedrooms: 1, bathrooms: 1, cleaningTimeMinutes: 65, servicesSuspended: false },
-];
-
-const initialTaskTypes: TaskType[] = [
-  { id: 1, code: 'SL', description: 'Salida y Limpieza' },
-  { id: 2, code: 'SV', description: 'Servicio' },
-  { id: 3, code: 'LG', description: 'Lavado General' },
-];
-
-const initialAssignments: Assignment[] = [];
-
-const initialCheckIns: CheckIn[] = [
-  { id: 1, apartmentId: 201, guestFirstName: 'Familia', guestLastName: 'García', guestDocument: '12345678A', checkInDate: '2023-10-20', checkOutDate: '2023-10-26', details: '2 adultos, 1 niño.' },
-];
-
-const initialWorkOrders: WorkOrder[] = [];
-
-const getInitialState = () => ({
-  users: initialUsers,
-  roles: initialRoles,
-  apartments: initialApartments,
-  taskTypes: initialTaskTypes,
-  assignments: initialAssignments,
-  checkIns: initialCheckIns,
-  workOrders: initialWorkOrders,
-  buildingName: 'Edificio Michelangelo',
-});
-
-
-interface AppContextType {
-  currentUser: User | null;
-  activeRole: Role | null;
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
-  setActiveRole: (roleId: number) => void;
+interface AppData {
   users: User[];
   roles: Role[];
   apartments: Apartment[];
@@ -67,263 +9,265 @@ interface AppContextType {
   assignments: Assignment[];
   checkIns: CheckIn[];
   workOrders: WorkOrder[];
+  logbookEntries: LogbookEntry[];
+  postIts: PostIt[];
   buildingName: string;
-  updateBuildingName: (newName: string) => void;
-  addUser: (user: Omit<User, 'id'>) => void;
-  updateUser: (user: User) => void;
-  deleteUser: (userId: number) => void;
-  addRole: (role: Omit<Role, 'id'>) => void;
-  updateRole: (role: Role) => void;
-  deleteRole: (roleId: number) => boolean;
-  addApartment: (apartment: Omit<Apartment, 'id'>) => void;
-  updateApartment: (apartment: Apartment) => void;
-  deleteApartment: (apartmentId: number) => void;
-  addTaskType: (taskType: Omit<TaskType, 'id'>) => void;
-  updateTaskType: (taskType: TaskType) => void;
-  deleteTaskType: (taskTypeId: number) => void;
-  addAssignment: (assignment: Omit<Assignment, 'id' | 'status' | 'completedTasks' | 'observations'>) => void;
-  updateAssignmentStatus: (assignmentId: number, status: AssignmentStatus) => void;
-  reassignTask: (assignmentId: number, employeeIds: number[]) => void;
-  completeAssignment: (assignmentId: number, taskIds: number[], observations: string) => void;
-  addCheckIn: (checkIn: Omit<CheckIn, 'id'>) => void;
-  updateCheckIn: (checkIn: CheckIn) => void;
-  deleteCheckIn: (checkInId: number) => void;
-  addWorkOrder: (workOrder: Omit<WorkOrder, 'id' | 'status'>) => void;
-  updateWorkOrderWorkDone: (workOrderId: number, completionDate: string, materialsUsed: string) => void;
-  updateWorkOrderApproval: (workOrderId: number, approvalName: string, approvalDate: string) => void;
-  deleteWorkOrder: (workOrderId: number) => void;
+}
+
+interface AppContextType extends AppData {
+  currentUser: User | null;
+  activeRole: Role | null;
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  setActiveRole: (roleId: number) => void;
+  
+  updateBuildingName: (newName: string) => Promise<void>;
+  addUser: (user: Omit<User, 'id'>) => Promise<void>;
+  updateUser: (user: User) => Promise<void>;
+  deleteUser: (userId: number) => Promise<void>;
+  addRole: (role: Omit<Role, 'id'>) => Promise<void>;
+  updateRole: (role: Role) => Promise<void>;
+  deleteRole: (roleId: number) => Promise<boolean>;
+  addApartment: (apartment: Omit<Apartment, 'id'>) => Promise<void>;
+  updateApartment: (apartment: Apartment) => Promise<void>;
+  deleteApartment: (apartmentId: number) => Promise<void>;
+  addTaskType: (taskType: Omit<TaskType, 'id'>) => Promise<void>;
+  updateTaskType: (taskType: TaskType) => Promise<void>;
+  deleteTaskType: (taskTypeId: number) => Promise<void>;
+  addAssignment: (assignment: Omit<Assignment, 'id' | 'status' | 'completedTasks' | 'observations'>) => Promise<void>;
+  updateAssignmentStatus: (assignmentId: number, status: AssignmentStatus) => Promise<void>;
+  reassignTask: (assignmentId: number, employeeIds: number[]) => Promise<void>;
+  completeAssignment: (assignmentId: number, taskIds: number[], observations: string) => Promise<void>;
+  addCheckIn: (checkIn: Omit<CheckIn, 'id'>) => Promise<void>;
+  updateCheckIn: (checkIn: CheckIn) => Promise<void>;
+  deleteCheckIn: (checkInId: number) => Promise<void>;
+  addWorkOrder: (workOrder: Omit<WorkOrder, 'id' | 'status'>) => Promise<void>;
+  updateWorkOrderWorkDone: (workOrderId: number, completionDate: string, materialsUsed: string) => Promise<void>;
+  updateWorkOrderApproval: (workOrderId: number, approvalName: string, approvalDate: string) => Promise<void>;
+  deleteWorkOrder: (workOrderId: number) => Promise<void>;
+  addLogbookEntry: (entry: Omit<LogbookEntry, 'id' | 'date' | 'createdBy'>) => Promise<void>;
+  updateLogbookEntry: (entry: LogbookEntry) => Promise<void>;
+  deleteLogbookEntry: (entryId: number) => Promise<void>;
+  addPostIt: (postItData: Omit<PostIt, 'id' | 'createdAt' | 'createdBy' | 'comments'>) => Promise<void>;
+  deletePostIt: (postItId: number) => Promise<void>;
+  addCommentToPostIt: (postItId: number, commentData: Omit<PostItComment, 'id' | 'createdAt' | 'createdBy'>) => Promise<void>;
+
+  isLoading: boolean;
+  error: string | null;
+  reloadData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const apiRequest = async (url: string, options: RequestInit = {}) => {
+    try {
+        const response = await fetch(`/api${url}`, {
+            headers: { 'Content-Type': 'application/json', ...options.headers },
+            ...options
+        });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+            throw new Error(errorBody.message || 'API request failed');
+        }
+        if (response.status === 204) {
+            return;
+        }
+        return response.json();
+    } catch (err) {
+        console.error(`API Error on ${options.method || 'GET'} ${url}:`, err);
+        throw err;
+    }
+};
+
 export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [data, setData] = useState(getInitialState());
+  const [data, setData] = useState<AppData | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeRole, setActiveRoleState] = useState<Role | null>(null);
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const reloadData = useCallback(async () => {
+      try {
+          setIsLoading(true);
+          const freshData = await apiRequest('/data');
+          setData(freshData);
+          setError(null);
+      } catch (e) {
+          setError(e instanceof Error ? e.message : 'Failed to fetch data');
+      } finally {
+          setIsLoading(false);
+      }
+  }, []);
+
+  useEffect(() => {
+    reloadData();
+  }, [reloadData]);
+
   const setActiveRole = useCallback((roleId: number) => {
-    const role = data.roles.find(r => r.id === roleId);
+    const role = data?.roles.find(r => r.id === roleId);
     if (role && currentUser?.roleIds.includes(roleId)) {
         setActiveRoleState(role);
     }
-  }, [data.roles, currentUser]);
+  }, [data, currentUser]);
 
 
-  const login = useCallback((username: string, password: string): boolean => {
-    const user = data.users.find(u => u.username === username && u.password === password);
-    if (user) {
-      setCurrentUser(user);
-      if (user.roleIds.length === 1) {
-        setActiveRole(user.roleIds[0]);
-      } else {
-        setActiveRoleState(null); // Await role selection from UI
-      }
-      return true;
+  const login = useCallback(async (username: string, password: string): Promise<boolean> => {
+    try {
+        const user = await apiRequest('/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password }),
+        });
+        setCurrentUser(user);
+        if (user.roleIds.length === 1 && data) {
+            setActiveRole(user.roleIds[0]);
+        } else {
+            setActiveRoleState(null);
+        }
+        return true;
+    } catch (e) {
+        return false;
     }
-    return false;
-  }, [data.users, setActiveRole]);
+  }, [data, setActiveRole]);
 
   const logout = useCallback(() => {
     setCurrentUser(null);
     setActiveRoleState(null);
   }, []);
-
-  const updateBuildingName = useCallback((newName: string) => {
-    setData(prev => ({ ...prev, buildingName: newName }));
-  }, []);
-
-  const addUser = useCallback((user: Omit<User, 'id'>) => {
-    if (data.users.some(u => u.employeeId === user.employeeId)) {
-        alert('Error: El ID de Empleado ya existe.');
-        return;
-    }
-    setData(prev => ({ ...prev, users: [...prev.users, { ...user, id: Date.now() }] }));
-  }, [data.users]);
   
-  const updateUser = useCallback((updatedUser: User) => {
-    if (data.users.some(u => u.employeeId === updatedUser.employeeId && u.id !== updatedUser.id)) {
-        alert('Error: El ID de Empleado ya existe.');
-        return;
-    }
-    setData(prev => ({...prev, users: prev.users.map(u => u.id === updatedUser.id ? updatedUser : u)}));
-  },[data.users]);
+  const createGenericHandler = <T extends { id: number }, U>(resource: keyof AppData, idField: keyof T = 'id') => ({
+      add: async (item: U) => {
+          await apiRequest(`/${resource}`, { method: 'POST', body: JSON.stringify(item) });
+          await reloadData();
+      },
+      update: async (item: T) => {
+          await apiRequest(`/${resource}/${item[idField]}`, { method: 'PUT', body: JSON.stringify(item) });
+          await reloadData();
+      },
+      remove: async (id: number) => {
+          await apiRequest(`/${resource}/${id}`, { method: 'DELETE' });
+          await reloadData();
+      },
+  });
 
-  const deleteUser = useCallback((userId: number) => {
-    setData(prev => ({...prev, users: prev.users.filter(u => u.id !== userId)}));
-  },[]);
+  const usersHandler = createGenericHandler<User, Omit<User, 'id'>>('users');
+  const rolesHandler = createGenericHandler<Role, Omit<Role, 'id'>>('roles');
+  const apartmentsHandler = createGenericHandler<Apartment, Omit<Apartment, 'id'>>('apartments');
+  const taskTypesHandler = createGenericHandler<TaskType, Omit<TaskType, 'id'>>('taskTypes');
+  const assignmentsHandler = createGenericHandler<Assignment, Omit<Assignment, 'id'>>('assignments');
+  const checkInsHandler = createGenericHandler<CheckIn, Omit<CheckIn, 'id'>>('checkIns');
+  const workOrdersHandler = createGenericHandler<WorkOrder, Omit<WorkOrder, 'id'>>('workOrders');
+  const logbookHandler = createGenericHandler<LogbookEntry, Omit<LogbookEntry, 'id'>>('logbookEntries');
+  const postItsHandler = createGenericHandler<PostIt, Omit<PostIt, 'id'>>('postIts');
+
+  const updateBuildingName = async (name: string) => {
+      await apiRequest('/buildingName', { method: 'PUT', body: JSON.stringify({ name }) });
+      await reloadData();
+  };
   
-  const addRole = useCallback((role: Omit<Role, 'id'>) => {
-    setData(prev => ({...prev, roles: [...prev.roles, {...role, id: Date.now()}]}));
-  }, []);
-
-  const updateRole = useCallback((updatedRole: Role) => {
-    setData(prev => ({...prev, roles: prev.roles.map(r => r.id === updatedRole.id ? updatedRole : r)}));
-  }, []);
-
-  const deleteRole = useCallback((roleId: number) => {
-    const isRoleInUse = data.users.some(u => u.roleIds.includes(roleId));
-    if (isRoleInUse) {
+  const deleteRole = async (roleId: number) => {
+    if (data?.users.some((u: User) => u.roleIds.includes(roleId))) {
       alert('No se puede eliminar el rol porque está asignado a uno o más usuarios.');
       return false;
     }
-    setData(prev => ({...prev, roles: prev.roles.filter(r => r.id !== roleId)}));
+    await rolesHandler.remove(roleId);
     return true;
-  }, [data.users]);
+  };
 
-
-  const addApartment = useCallback((apartment: Omit<Apartment, 'id'>) => {
-    setData(prev => ({...prev, apartments: [...prev.apartments, { ...apartment, id: Date.now() }]}));
-  },[]);
-  
-  const updateApartment = useCallback((updatedApartment: Apartment) => {
-    setData(prev => ({...prev, apartments: prev.apartments.map(a => a.id === updatedApartment.id ? updatedApartment : a)}));
-  },[]);
-  
-  const deleteApartment = useCallback((apartmentId: number) => {
-     if (data.assignments.some(a => a.apartmentId === apartmentId) || data.checkIns.some(c => c.apartmentId === apartmentId)) {
+  const deleteApartment = async (apartmentId: number) => {
+    if (data?.assignments.some((a: Assignment) => a.apartmentId === apartmentId) || data?.checkIns.some((c: CheckIn) => c.apartmentId === apartmentId)) {
         alert('No se puede eliminar el apartamento porque tiene asignaciones o check-ins históricos.');
         return;
     }
-    setData(prev => ({...prev, apartments: prev.apartments.filter(a => a.id !== apartmentId)}));
-  },[data.assignments, data.checkIns]);
+    await apartmentsHandler.remove(apartmentId);
+  };
   
-  const addTaskType = useCallback((taskType: Omit<TaskType, 'id'>) => {
-    setData(prev => ({...prev, taskTypes: [...prev.taskTypes, { ...taskType, id: Date.now() }]}));
-  },[]);
+  const addAssignment = async (assignment: Omit<Assignment, 'id'|'status'|'completedTasks'|'observations'>) => {
+    await assignmentsHandler.add({ ...assignment, status: AssignmentStatus.PENDIENTE, completedTasks: [], observations: '' });
+  };
   
-  const updateTaskType = useCallback((updatedTaskType: TaskType) => {
-    setData(prev => ({...prev, taskTypes: prev.taskTypes.map(t => t.id === updatedTaskType.id ? updatedTaskType : t)}));
-  },[]);
-  
-  const deleteTaskType = useCallback((taskTypeId: number) => {
-    setData(prev => ({...prev, taskTypes: prev.taskTypes.filter(t => t.id !== taskTypeId)}));
-  },[]);
-
-  const addAssignment = useCallback((assignment: Omit<Assignment, 'id' | 'status' | 'completedTasks' | 'observations'>) => {
-    const newAssignment: Assignment = {
-      ...assignment,
-      id: Date.now(),
-      status: AssignmentStatus.PENDIENTE,
-      completedTasks: [],
-      observations: '',
-    };
-    setData(prev => ({ ...prev, assignments: [...prev.assignments, newAssignment] }));
-  }, []);
-
-  const updateAssignmentStatus = useCallback((assignmentId: number, status: AssignmentStatus) => {
-    setData(prev => ({
-      ...prev,
-      assignments: prev.assignments.map(a => a.id === assignmentId ? { ...a, status } : a)
-    }));
-  }, []);
-
-  const reassignTask = useCallback((assignmentId: number, employeeIds: number[]) => {
-    setData(prev => ({
-      ...prev,
-      assignments: prev.assignments.map(a => a.id === assignmentId ? { ...a, employeeIds } : a)
-    }));
-  }, []);
-  
-  const completeAssignment = useCallback((assignmentId: number, taskIds: number[], observations: string) => {
-    setData(prev => ({
-      ...prev,
-      assignments: prev.assignments.map(a => a.id === assignmentId ? { ...a, status: AssignmentStatus.COMPLETADA, completedTasks: taskIds, observations } : a)
-    }));
-  }, []);
-
-  const addCheckIn = useCallback((checkIn: Omit<CheckIn, 'id'>) => {
-    const newCheckIn: CheckIn = { ...checkIn, id: Date.now() };
-    setData(prev => ({ ...prev, checkIns: [...prev.checkIns, newCheckIn] }));
-  }, []);
-
-  const updateCheckIn = useCallback((updatedCheckIn: CheckIn) => {
-    setData(prev => ({
-        ...prev,
-        checkIns: prev.checkIns.map(ci => ci.id === updatedCheckIn.id ? updatedCheckIn : ci)
-    }));
-  }, []);
-
-  const deleteCheckIn = useCallback((checkInId: number) => {
-    if (window.confirm('¿Está seguro que desea eliminar este registro de check-in? Esta acción es irreversible.')) {
-        setData(prevData => ({
-            ...prevData,
-            checkIns: prevData.checkIns.filter(ci => ci.id !== checkInId)
-        }));
+  const updateAssignment = async (id: number, updates: Partial<Assignment>) => {
+    const assignment = data?.assignments.find((a: Assignment) => a.id === id);
+    if (assignment) {
+        await assignmentsHandler.update({ ...assignment, ...updates });
     }
-  }, []);
+  };
 
-  const addWorkOrder = useCallback((workOrder: Omit<WorkOrder, 'id' | 'status'>) => {
-    const newWorkOrder: WorkOrder = {
-        ...workOrder,
-        id: Date.now(),
-        status: WorkOrderStatus.SOLICITADO,
-    };
-    setData(prev => ({ ...prev, workOrders: [...prev.workOrders, newWorkOrder] }));
-  }, []);
-
-  const updateWorkOrderWorkDone = useCallback((workOrderId: number, completionDate: string, materialsUsed: string) => {
-      setData(prev => ({
-          ...prev,
-          workOrders: prev.workOrders.map(wo => 
-              wo.id === workOrderId 
-                  ? { ...wo, status: WorkOrderStatus.REALIZADO, completionDate, materialsUsed } 
-                  : wo
-          )
-      }));
-  }, []);
-
-  const updateWorkOrderApproval = useCallback((workOrderId: number, approvalName: string, approvalDate: string) => {
-      setData(prev => ({
-          ...prev,
-          workOrders: prev.workOrders.map(wo => 
-              wo.id === workOrderId 
-                  ? { ...wo, status: WorkOrderStatus.CONFORME, approvalName, approvalDate } 
-                  : wo
-          )
-      }));
-  }, []);
-
-  const deleteWorkOrder = useCallback((workOrderId: number) => {
-      if (window.confirm('¿Está seguro que desea eliminar esta orden de trabajo?')) {
-          setData(prev => ({
-              ...prev,
-              workOrders: prev.workOrders.filter(wo => wo.id !== workOrderId)
-          }));
-      }
-  }, []);
+  const addWorkOrder = async (workOrder: Omit<WorkOrder, 'id' | 'status'>) => {
+    await workOrdersHandler.add({ ...workOrder, status: WorkOrderStatus.SOLICITADO });
+  };
   
+  const updateWorkOrder = async (id: number, updates: Partial<WorkOrder>) => {
+      const workOrder = data?.workOrders.find((wo: WorkOrder) => wo.id === id);
+      if(workOrder) {
+          await workOrdersHandler.update({ ...workOrder, ...updates });
+      }
+  };
+  
+  const addLogbookEntry = async (entry: Omit<LogbookEntry, 'id' | 'date' | 'createdBy'>) => {
+      if(currentUser) {
+          await logbookHandler.add({ ...entry, date: new Date().toISOString(), createdBy: currentUser.id });
+      }
+  };
+
+  const updateLogbookEntry = async (entry: LogbookEntry) => {
+      await logbookHandler.update({ ...entry, date: new Date().toISOString() });
+  };
+  
+  const addPostIt = async (postItData: Omit<PostIt, 'id' | 'createdAt' | 'createdBy' | 'comments'>) => {
+      if(currentUser) {
+          await postItsHandler.add({ ...postItData, createdAt: new Date().toISOString(), createdBy: currentUser.id, comments: [] });
+      }
+  };
+
+  const addCommentToPostIt = async (postItId: number, commentData: Omit<PostItComment, 'id' | 'createdAt' | 'createdBy'>) => {
+      if(currentUser) {
+          await apiRequest(`/postIts/${postItId}/comments`, { method: 'POST', body: JSON.stringify({ ...commentData, createdBy: currentUser.id }) });
+          await reloadData();
+      }
+  };
+
+
   const value = useMemo(() => ({
-    ...data,
+    ...(data || { users: [], roles: [], apartments: [], taskTypes: [], assignments: [], checkIns: [], workOrders: [], logbookEntries: [], postIts: [], buildingName: '' }),
     currentUser,
     activeRole,
     login,
     logout,
     setActiveRole,
-    addUser,
-    updateUser,
-    deleteUser,
-    addRole,
-    updateRole,
+    addUser: usersHandler.add,
+    updateUser: usersHandler.update,
+    deleteUser: usersHandler.remove,
+    addRole: rolesHandler.add,
+    updateRole: rolesHandler.update,
     deleteRole,
-    addApartment,
-    updateApartment,
+    addApartment: apartmentsHandler.add,
+    updateApartment: apartmentsHandler.update,
     deleteApartment,
-    addTaskType,
-    updateTaskType,
-    deleteTaskType,
+    addTaskType: taskTypesHandler.add,
+    updateTaskType: taskTypesHandler.update,
+    deleteTaskType: taskTypesHandler.remove,
     addAssignment,
-    updateAssignmentStatus,
-    reassignTask,
-    completeAssignment,
-    addCheckIn,
-    updateCheckIn,
-    deleteCheckIn,
+    updateAssignmentStatus: (id: number, status: AssignmentStatus) => updateAssignment(id, { status }),
+    reassignTask: (id: number, employeeIds: number[]) => updateAssignment(id, { employeeIds }),
+    completeAssignment: (id: number, completedTasks: number[], observations: string) => updateAssignment(id, { status: AssignmentStatus.COMPLETADA, completedTasks, observations }),
+    addCheckIn: checkInsHandler.add,
+    updateCheckIn: checkInsHandler.update,
+    deleteCheckIn: checkInsHandler.remove,
     addWorkOrder,
-    updateWorkOrderWorkDone,
-    updateWorkOrderApproval,
-    deleteWorkOrder,
+    updateWorkOrderWorkDone: (id: number, completionDate: string, materialsUsed: string) => updateWorkOrder(id, { status: WorkOrderStatus.REALIZADO, completionDate, materialsUsed }),
+    updateWorkOrderApproval: (id: number, approvalName: string, approvalDate: string) => updateWorkOrder(id, { status: WorkOrderStatus.CONFORME, approvalName, approvalDate }),
+    deleteWorkOrder: workOrdersHandler.remove,
+    addLogbookEntry,
+    updateLogbookEntry,
+    deleteLogbookEntry: logbookHandler.remove,
+    addPostIt,
+    deletePostIt: postItsHandler.remove,
+    addCommentToPostIt,
     updateBuildingName,
-  }), [data, currentUser, activeRole, login, logout, setActiveRole, addUser, updateUser, deleteUser, addRole, updateRole, deleteRole, addApartment, updateApartment, deleteApartment, addTaskType, updateTaskType, deleteTaskType, addAssignment, updateAssignmentStatus, reassignTask, completeAssignment, addCheckIn, updateCheckIn, deleteCheckIn, addWorkOrder, updateWorkOrderWorkDone, updateWorkOrderApproval, deleteWorkOrder, updateBuildingName]);
+    isLoading,
+    error,
+    reloadData,
+  }), [data, currentUser, activeRole, isLoading, error, login, logout, setActiveRole, reloadData]);
 
   return (
     <AppContext.Provider value={value}>
