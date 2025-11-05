@@ -16,8 +16,8 @@ export const SupervisorDashboard: React.FC = () => {
     return (
         <div className="p-4 md:p-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-                 <h1 className="text-3xl font-bold text-stone-800">Panel del Supervisor</h1>
-                 <div className="border-b md:border-b-0 border-stone-200 mt-4 md:mt-0">
+                 <h1 className="text-3xl font-bold text-slate-800">Panel del Supervisor</h1>
+                 <div className="border-b md:border-b-0 border-slate-200 mt-4 md:mt-0">
                     <div className="flex space-x-4">
                         <TabButton isActive={activeTab === 'employees'} onClick={() => setActiveTab('employees')}>
                             <UserGroupIcon className="w-5 h-5"/>
@@ -117,7 +117,6 @@ const UserFormModal: React.FC<{ user: User | null; onClose: () => void; }> = ({ 
     const [roleIds, setRoleIds] = useState<number[]>([]);
     const [dailyMinutes, setDailyMinutes] = useState('');
     const [error, setError] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const mucamaRoleId = useMemo(() => roles.find(r => r.name === 'Mucama')?.id, [roles]);
     const isMucama = useMemo(() => mucamaRoleId !== undefined && roleIds.includes(mucamaRoleId), [roleIds, mucamaRoleId]);
@@ -152,7 +151,7 @@ const UserFormModal: React.FC<{ user: User | null; onClose: () => void; }> = ({ 
         setRoleIds(value);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -182,8 +181,7 @@ const UserFormModal: React.FC<{ user: User | null; onClose: () => void; }> = ({ 
             setError('Los minutos diarios deben ser un número válido.');
             return;
         }
-        
-        setIsSubmitting(true);
+
         if(user) {
             const updatedUserData: User = { 
                 ...user, 
@@ -194,24 +192,21 @@ const UserFormModal: React.FC<{ user: User | null; onClose: () => void; }> = ({ 
                 password: password ? password : user.password,
                 dailyMinutes: dailyMinutesValue
             };
-            await updateUser(updatedUserData);
+            updateUser(updatedUserData);
         } else {
-            await addUser({ employeeId, name, username, password, roleIds, dailyMinutes: dailyMinutesValue });
+            addUser({ employeeId, name, username, password, roleIds, dailyMinutes: dailyMinutesValue });
         }
-        setIsSubmitting(false);
         onClose();
     };
     
-    const handleDelete = useCallback(async () => {
+    const handleDelete = useCallback(() => {
         if (user && window.confirm('¿Está seguro de que desea eliminar este usuario? Esta acción es irreversible.')) {
-            setIsSubmitting(true);
-            await deleteUser(user.id);
-            setIsSubmitting(false);
+            deleteUser(user.id);
             onClose();
         }
     }, [user, deleteUser, onClose]);
 
-    const inputStyles = "mt-1 block w-full rounded-md border-amber-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm bg-amber-50 text-black placeholder-stone-500";
+    const inputStyles = "mt-1 block w-full rounded-md border-sky-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-sky-100 text-black placeholder-slate-500";
     const supervisorRole = useMemo(() => roles.find(r => r.name === 'Supervisor'), [roles]);
 
     return (
@@ -221,28 +216,28 @@ const UserFormModal: React.FC<{ user: User | null; onClose: () => void; }> = ({ 
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">ID Empleado</label>
+                        <label className="block text-sm font-medium text-slate-700">ID Empleado</label>
                         <input type="text" value={employeeId} onChange={e => setEmployeeId(e.target.value)} required pattern="\d+" title="Ingrese solo números" className={inputStyles} />
                     </div>
                      <div>
-                        <label className="block text-sm font-medium text-stone-700">Nombre Completo</label>
+                        <label className="block text-sm font-medium text-slate-700">Nombre Completo</label>
                         <input type="text" value={name} onChange={e => setName(e.target.value)} required className={inputStyles} />
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Nombre de Usuario</label>
+                        <label className="block text-sm font-medium text-slate-700">Nombre de Usuario</label>
                         <input type="text" value={username} onChange={e => setUsername(e.target.value)} required className={inputStyles} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Clave</label>
+                        <label className="block text-sm font-medium text-slate-700">Clave</label>
                         <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={user ? 'Dejar en blanco para no cambiar' : ''} required={!user} className={inputStyles} />
                     </div>
                 </div>
 
                  <div>
-                    <label className="block text-sm font-medium text-stone-700">Roles</label>
+                    <label className="block text-sm font-medium text-slate-700">Roles</label>
                     <select multiple value={roleIds.map(String)} onChange={handleRoleChange} required className={`${inputStyles} h-24`}>
                         {roles.filter(r => r.id !== supervisorRole?.id).map(r => (
                             <option key={r.id} value={r.id}>{r.name}</option>
@@ -252,20 +247,20 @@ const UserFormModal: React.FC<{ user: User | null; onClose: () => void; }> = ({ 
 
                 {isMucama && (
                      <div>
-                        <label className="block text-sm font-medium text-stone-700">Minutos Diarios de Dedicación</label>
+                        <label className="block text-sm font-medium text-slate-700">Minutos Diarios de Dedicación</label>
                         <input type="number" value={dailyMinutes} onChange={e => setDailyMinutes(e.target.value)} placeholder="Ej: 480 (para 8hs)" className={inputStyles} />
                     </div>
                 )}
 
                 <div className="flex justify-end gap-2 pt-4">
                     {user && (
-                        <Button type="button" variant="danger" onClick={handleDelete} className="mr-auto" disabled={isSubmitting}>
+                        <Button type="button" variant="danger" onClick={handleDelete} className="mr-auto">
                             <TrashIcon className="w-5 h-5"/>
                             <span className="ml-2">Eliminar</span>
                         </Button>
                     )}
-                    <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
-                    <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Guardando..." : (user ? 'Guardar Cambios' : 'Crear Usuario')}</Button>
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+                    <Button type="submit">{user ? 'Guardar Cambios' : 'Crear Usuario'}</Button>
                 </div>
             </form>
         </Modal>
@@ -275,14 +270,11 @@ const UserFormModal: React.FC<{ user: User | null; onClose: () => void; }> = ({ 
 const GeneralSettings: React.FC = () => {
     const { buildingName, updateBuildingName } = useAppData();
     const [name, setName] = useState(buildingName);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (name.trim()) {
-            setIsSubmitting(true);
-            await updateBuildingName(name.trim());
-            setIsSubmitting(false);
+            updateBuildingName(name.trim());
             alert('Nombre del edificio actualizado.');
         } else {
             alert('El nombre no puede estar vacío.');
@@ -293,18 +285,18 @@ const GeneralSettings: React.FC = () => {
         <Card title="Configuración General">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label htmlFor="buildingName" className="block text-sm font-medium text-stone-700">Nombre del Edificio</label>
+                    <label htmlFor="buildingName" className="block text-sm font-medium text-slate-700">Nombre del Edificio</label>
                     <input
                         id="buildingName"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="mt-1 block w-full rounded-md border-amber-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm bg-amber-50 text-black placeholder-stone-500"
+                        className="mt-1 block w-full rounded-md border-sky-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-sky-100 text-black placeholder-slate-500"
                         required
                     />
                 </div>
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Guardando..." : "Guardar Cambios"}</Button>
+                    <Button type="submit">Guardar Cambios</Button>
                 </div>
             </form>
         </Card>
@@ -351,9 +343,9 @@ const TaskTypeManager: React.FC = () => {
                 </div>
                 <ul className="space-y-2">
                     {taskTypes.map(tt => (
-                        <li key={tt.id} className="flex justify-between items-center p-2 border rounded-md bg-stone-50">
+                        <li key={tt.id} className="flex justify-between items-center p-2 border rounded-md bg-slate-50">
                             <div>
-                                <span className="font-bold text-amber-700">{tt.code}</span> - <span>{tt.description}</span>
+                                <span className="font-bold text-indigo-700">{tt.code}</span> - <span>{tt.description}</span>
                             </div>
                             <div className="flex gap-2">
                                 <Button size="sm" variant="secondary" onClick={() => handleEdit(tt)}><PencilIcon className="w-4 h-4"/></Button>
@@ -372,7 +364,6 @@ const TaskTypeFormModal: React.FC<{ taskType: TaskType | null; onClose: () => vo
     const { addTaskType, updateTaskType } = useAppData();
     const [code, setCode] = useState('');
     const [description, setDescription] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if(taskType) {
@@ -381,38 +372,36 @@ const TaskTypeFormModal: React.FC<{ taskType: TaskType | null; onClose: () => vo
         }
     }, [taskType]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if(!code || !description) {
             alert('Ambos campos son requeridos.');
             return;
         }
-        setIsSubmitting(true);
         if(taskType) {
-            await updateTaskType({ ...taskType, code, description });
+            updateTaskType({ ...taskType, code, description });
         } else {
-            await addTaskType({ code, description });
+            addTaskType({ code, description });
         }
-        setIsSubmitting(false);
         onClose();
     };
 
-    const inputStyles = "mt-1 block w-full rounded-md border-amber-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm bg-amber-50 text-black";
+    const inputStyles = "mt-1 block w-full rounded-md border-sky-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-sky-100 text-black";
 
     return (
         <Modal isOpen={true} onClose={onClose} title={taskType ? 'Editar Tipo de Tarea' : 'Nuevo Tipo de Tarea'}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-stone-700">Código</label>
+                    <label className="block text-sm font-medium text-slate-700">Código</label>
                     <input type="text" value={code} onChange={e => setCode(e.target.value)} required className={inputStyles} />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-stone-700">Descripción</label>
+                    <label className="block text-sm font-medium text-slate-700">Descripción</label>
                     <input type="text" value={description} onChange={e => setDescription(e.target.value)} required className={inputStyles} />
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                    <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
-                    <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Guardando..." : (taskType ? 'Guardar Cambios' : 'Crear')}</Button>
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+                    <Button type="submit">{taskType ? 'Guardar Cambios' : 'Crear'}</Button>
                 </div>
             </form>
         </Modal>
@@ -450,7 +439,7 @@ const RoleManager: React.FC = () => {
                 </div>
                 <ul className="space-y-2">
                     {roles.map(role => (
-                        <li key={role.id} className="flex justify-between items-center p-2 border rounded-md bg-stone-50">
+                        <li key={role.id} className="flex justify-between items-center p-2 border rounded-md bg-slate-50">
                            <span>{role.name}</span>
                            {role.id !== supervisorRole?.id && (
                              <div className="flex gap-2">
@@ -471,13 +460,12 @@ const RoleFormModal: React.FC<{ role: Role | null; onClose: () => void; }> = ({ 
     const { addRole, updateRole, roles } = useAppData();
     const [name, setName] = useState('');
     const [error, setError] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if(role) setName(role.name);
     }, [role]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         if(!name) {
@@ -490,29 +478,27 @@ const RoleFormModal: React.FC<{ role: Role | null; onClose: () => void; }> = ({ 
             return;
         }
 
-        setIsSubmitting(true);
         if(role) {
-            await updateRole({ ...role, name });
+            updateRole({ ...role, name });
         } else {
-            await addRole({ name });
+            addRole({ name });
         }
-        setIsSubmitting(false);
         onClose();
     };
 
-    const inputStyles = "mt-1 block w-full rounded-md border-amber-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm bg-amber-50 text-black";
+    const inputStyles = "mt-1 block w-full rounded-md border-sky-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-sky-100 text-black";
 
     return (
         <Modal isOpen={true} onClose={onClose} title={role ? 'Editar Rol' : 'Nuevo Rol'}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 {error && <p className="text-sm text-red-600 bg-red-100 p-2 rounded-md">{error}</p>}
                 <div>
-                    <label className="block text-sm font-medium text-stone-700">Nombre del Rol</label>
+                    <label className="block text-sm font-medium text-slate-700">Nombre del Rol</label>
                     <input type="text" value={name} onChange={e => setName(e.target.value)} required className={inputStyles} />
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                    <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
-                    <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Guardando..." : (role ? 'Guardar Cambios' : 'Crear')}</Button>
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+                    <Button type="submit">{role ? 'Guardar Cambios' : 'Crear'}</Button>
                 </div>
             </form>
         </Modal>
@@ -600,7 +586,6 @@ const ApartmentFormModal: React.FC<{ apartment: Apartment | null; onClose: () =>
         servicesSuspended: false,
     });
     const [error, setError] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if (apartment) {
@@ -630,7 +615,7 @@ const ApartmentFormModal: React.FC<{ apartment: Apartment | null; onClose: () =>
         }));
     };
     
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -658,26 +643,22 @@ const ApartmentFormModal: React.FC<{ apartment: Apartment | null; onClose: () =>
             servicesSuspended: formData.servicesSuspended,
         };
 
-        setIsSubmitting(true);
         if (apartment) {
-            await updateApartment({ ...apartment, ...apartmentData });
+            updateApartment({ ...apartment, ...apartmentData });
         } else {
-            await addApartment(apartmentData as Omit<Apartment, 'id'>);
+            addApartment(apartmentData as Omit<Apartment, 'id'>);
         }
-        setIsSubmitting(false);
         onClose();
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (apartment) {
-            setIsSubmitting(true);
-            await deleteApartment(apartment.id);
-            setIsSubmitting(false);
+            deleteApartment(apartment.id);
             onClose();
         }
     };
     
-    const inputStyles = "mt-1 block w-full rounded-md border-amber-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm bg-amber-50 text-black placeholder-stone-500";
+    const inputStyles = "mt-1 block w-full rounded-md border-sky-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-sky-100 text-black placeholder-slate-500";
 
     return (
         <Modal isOpen={true} onClose={onClose} title={apartment ? 'Editar Apartamento' : 'Añadir Apartamento'}>
@@ -686,7 +667,7 @@ const ApartmentFormModal: React.FC<{ apartment: Apartment | null; onClose: () =>
                 
                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Unidad</label>
+                        <label className="block text-sm font-medium text-slate-700">Unidad</label>
                         <input
                             type="text"
                             name="name"
@@ -701,7 +682,7 @@ const ApartmentFormModal: React.FC<{ apartment: Apartment | null; onClose: () =>
                         />
                     </div>
                      <div>
-                        <label className="block text-sm font-medium text-stone-700">Tamaño</label>
+                        <label className="block text-sm font-medium text-slate-700">Tamaño</label>
                         <select
                             name="size"
                             value={formData.size}
@@ -718,39 +699,39 @@ const ApartmentFormModal: React.FC<{ apartment: Apartment | null; onClose: () =>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Metros Cuadrados (m²)</label>
+                        <label className="block text-sm font-medium text-slate-700">Metros Cuadrados (m²)</label>
                         <input type="number" name="squareMeters" value={formData.squareMeters} onChange={handleChange} required className={inputStyles} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Minutos de Limpieza</label>
+                        <label className="block text-sm font-medium text-slate-700">Minutos de Limpieza</label>
                         <input type="number" name="cleaningTimeMinutes" value={formData.cleaningTimeMinutes} onChange={handleChange} required className={inputStyles} />
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Dormitorios</label>
+                        <label className="block text-sm font-medium text-slate-700">Dormitorios</label>
                         <input type="number" name="bedrooms" value={formData.bedrooms} onChange={handleChange} required className={inputStyles} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Baños</label>
+                        <label className="block text-sm font-medium text-slate-700">Baños</label>
                         <input type="number" name="bathrooms" value={formData.bathrooms} onChange={handleChange} required className={inputStyles} />
                     </div>
                 </div>
 
                 <div className="flex items-center pt-2">
-                    <input id="servicesSuspended" name="servicesSuspended" type="checkbox" checked={formData.servicesSuspended} onChange={handleChange} className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"/>
-                    <label htmlFor="servicesSuspended" className="ml-2 block text-sm text-stone-900">Servicios suspendidos</label>
+                    <input id="servicesSuspended" name="servicesSuspended" type="checkbox" checked={formData.servicesSuspended} onChange={handleChange} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"/>
+                    <label htmlFor="servicesSuspended" className="ml-2 block text-sm text-slate-900">Servicios suspendidos</label>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
                      {apartment && (
-                        <Button type="button" variant="danger" onClick={handleDelete} className="mr-auto" disabled={isSubmitting}>
+                        <Button type="button" variant="danger" onClick={handleDelete} className="mr-auto">
                             <TrashIcon className="w-5 h-5"/> Eliminar
                         </Button>
                     )}
-                    <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
-                    <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Guardando..." : (apartment ? 'Guardar Cambios' : 'Crear Apartamento')}</Button>
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+                    <Button type="submit">{apartment ? 'Guardar Cambios' : 'Crear Apartamento'}</Button>
                 </div>
             </form>
         </Modal>
