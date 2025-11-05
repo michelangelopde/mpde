@@ -13,7 +13,7 @@ export const EmployeeDashboard: React.FC = () => {
 
     const myTasks = useMemo(() => {
         if (!currentUser) return [];
-        const tasks = assignments.filter(a =>
+        const tasks = assignments.filter((a: Assignment) =>
             a.employeeIds.includes(currentUser.id) &&
             a.date === selectedDate &&
             (a.status === AssignmentStatus.PENDIENTE || selectedDate === today)
